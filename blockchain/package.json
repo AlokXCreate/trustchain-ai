@@ -1,0 +1,30 @@
+{
+  "name": "trustchain-blockchain",
+  "version": "1.0.0",
+  "description": "TrustChain AI Smart Contracts and Credential Registry",
+  "main": "hardhat.config.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:hardhat": "hardhat run scripts/deploy.js --network hardhat",
+    "node": "hardhat node"
+  },
+  "keywords": [
+    "blockchain",
+    "credentials",
+    "ethereum",
+    "solidity",
+    "hardhat"
+  ],
+  "author": "TrustChain AI Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.18"
+  },
+  "dependencies": {
+    "@nomicfoundation/edr-win32-x64-msvc": "^0.25.0",
+    "ethereum-cryptography": "^0.1.3"
+  }
+}

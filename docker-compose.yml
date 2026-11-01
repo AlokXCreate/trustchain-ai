@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: trustchain-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - API_V1_STR=/api/v1
+      - PROJECT_NAME=TrustChain AI
+      - SECRET_KEY=trustchain-ai-enterprise-jwt-secret-key-32chars
+      - ACCESS_TOKEN_EXPIRE_MINUTES=1440
+      - BACKEND_CORS_ORIGINS=["http://localhost:5173","http://localhost:80","http://127.0.0.1:5173","http://127.0.0.1:8000"]
+      - UPLOAD_DIR=/app/uploads
+      - MAX_UPLOAD_SIZE_MB=10
+      - USE_LOCAL_FALLBACK=true
+      - ETH_NETWORK=sepolia
+      - SEPOLIA_RPC_URL=https://rpc.sepolia.org
+      - CONTRACT_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
+    volumes:
+      - backend-uploads:/app/uploads
+      - backend-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: trustchain-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  backend-uploads:
+    driver: local
+  backend-data:
+    driver: local
+
