@@ -6,10 +6,13 @@ import { NotificationProvider } from './context/NotificationContext';
 import { ToastContainer } from './components/notifications/ToastContainer';
 import { AppLayout } from './components/layout/AppLayout';
 
+import { useAuth } from './context/AuthContext';
+
 // Route Code-Splitting (Optimized Bundle Size)
 const LandingPage = lazy(() => import('./pages/landing/LandingPage').then(m => ({ default: m.LandingPage })));
 const LoginPage = lazy(() => import('./pages/auth/AuthPages').then(m => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('./pages/auth/AuthPages').then(m => ({ default: m.RegisterPage })));
+const ProfileSetupPage = lazy(() => import('./pages/auth/ProfileSetupPage').then(m => ({ default: m.ProfileSetupPage })));
 const ForgotPasswordPage = lazy(() => import('./pages/auth/AuthPages').then(m => ({ default: m.ForgotPasswordPage })));
 const PublicVerificationPage = lazy(() => import('./pages/verify/PublicVerificationPage').then(m => ({ default: m.PublicVerificationPage })));
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
@@ -36,6 +39,23 @@ const RouteLoadingFallback: React.FC = () => (
   </div>
 );
 
+const InitialEntryRouter: React.FC = () => {
+  const { isAuthenticated, user, isLoading } = useAuth();
+  if (isLoading) return <RouteLoadingFallback />;
+
+  const profileCompleted = localStorage.getItem('tc_profile_completed') === 'true';
+
+  if (!isAuthenticated || !user) {
+    return <LoginPage />;
+  }
+
+  if (!profileCompleted) {
+    return <Navigate to="/profile-setup" replace />;
+  }
+
+  return <Navigate to="/app/dashboard" replace />;
+};
+
 export const App: React.FC = () => {
   return (
     <ThemeProvider>
@@ -46,14 +66,16 @@ export const App: React.FC = () => {
           <HashRouter>
             <Suspense fallback={<RouteLoadingFallback />}>
               <Routes>
-                {/* Public Landing, Authentication & Public Verifier */}
-                <Route path="/" element={<LandingPage />} />
+                {/* Entry Route: First shows Login / Sign Up / Guest, then Profile Setup, then Workspace */}
+                <Route path="/" element={<InitialEntryRouter />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/profile-setup" element={<ProfileSetupPage />} />
+                <Route path="/landing" element={<LandingPage />} />
                 <Route path="/verify/public" element={<PublicVerificationPage />} />
                 <Route path="/verify/credential/:credentialId" element={<PublicVerificationPage />} />
                 <Route path="/verify/report/:reportId" element={<PublicReportVerifyPage />} />
                 <Route path="/verify-credential" element={<PublicVerificationPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
                 {/* Authenticated Application Shell */}

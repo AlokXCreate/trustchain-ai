@@ -21,6 +21,7 @@ import {
   RefreshCw,
   Info,
   Check,
+  Camera,
 } from 'lucide-react';
 import { Credential, CredentialStatus, DocumentCategory, BlockchainStatusResponse, BlockchainVerifyResponse } from '../../types';
 import { api } from '../../services/api';
@@ -31,6 +32,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { useNotification } from '../../context/NotificationContext';
 import { ReportDownloadDropdown } from '../../components/reports/ReportDownloadDropdown';
+import { QrScannerModal } from '../../components/scanner/QrScannerModal';
 
 export const DigitalCredentialsPage: React.FC = () => {
   const { user, role } = useAuth();
@@ -38,6 +40,7 @@ export const DigitalCredentialsPage: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'my' | 'issued' | 'verify' | 'blockchain'>('my');
   const [credentials, setCredentials] = useState<Credential[]>([]);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Blockchain Telemetry
@@ -593,21 +596,45 @@ export const DigitalCredentialsPage: React.FC = () => {
             )}
 
             {verifyMethod === 'qr' && (
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Paste QR Payload or Verification Link
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={verifyQrText}
-                    onChange={(e) => setVerifyQrText(e.target.value)}
-                    placeholder="http://localhost:5173/verify/credential/TC-2026-MIT941"
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-950 text-sm"
-                  />
-                  <Button type="submit" variant="primary" disabled={isVerifying || !verifyQrText.trim()}>
-                    Verify URL
+              <div className="space-y-3">
+                <div className="p-4 rounded-xl border-2 border-dashed border-brand-accent/40 bg-brand-accent/5 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-brand-accent/20 flex items-center justify-center text-brand-accent">
+                      <Camera className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-800 dark:text-white text-sm">Scan with Device Camera or Upload QR Image</div>
+                      <div className="text-xs text-slate-500">Instant optical decode of physical certificates and QR badges</div>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setIsScannerOpen(true)}
+                    className="flex items-center gap-2 whitespace-nowrap"
+                  >
+                    <Camera className="w-4 h-4" />
+                    Open Live Scanner
                   </Button>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Or Paste QR Payload / Verification Link
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={verifyQrText}
+                      onChange={(e) => setVerifyQrText(e.target.value)}
+                      placeholder="e.g. TC-2026-MIT941 or https://alokxcreate.github.io/trustchain-ai/verify/credential/TC-2026-MIT941"
+                      className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-950 text-sm"
+                    />
+                    <Button type="submit" variant="primary" disabled={isVerifying || !verifyQrText.trim()}>
+                      Verify URL
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -874,6 +901,18 @@ export const DigitalCredentialsPage: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      <QrScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScanResult={(val) => {
+          setVerifyQrText(val);
+          const extractedId = val.includes('/') ? val.split('/').pop() || val : val;
+          setVerifyId(extractedId);
+          setIsScannerOpen(false);
+          notify.success('QR Code Decoded', `Payload captured: ${extractedId}`);
+        }}
+      />
     </div>
   );
 };

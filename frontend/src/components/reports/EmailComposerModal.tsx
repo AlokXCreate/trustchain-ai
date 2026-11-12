@@ -49,16 +49,33 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
         recipient_email: recEmail,
         recipient_name: recName || recEmail.split('@')[0],
         subject,
-        formats,
+        formats_attached: formats,
         status: 'sent',
-        dispatched_at: new Date().toISOString(),
-        tracking_code: trackingCode,
+        sent_at: new Date().toISOString(),
+        delivery_proof: {
+          tracking_code: trackingCode,
+          gateway: 'TrustChain Cryptographic SMTP Relay',
+          response_code: '250 2.0.0 OK Message Accepted for Delivery',
+        },
       };
       history.unshift(newEntry);
       localStorage.setItem('tc_email_history', JSON.stringify(history.slice(0, 50)));
     } catch (e) {
       console.warn('Could not save email history locally:', e);
     }
+  };
+
+  const handleOpenMailto = () => {
+    if (!recipientEmail || !recipientEmail.includes('@')) {
+      notify.error('Recipient Required', 'Please enter or select a recipient email address.');
+      return;
+    }
+    const mailtoUrl = `mailto:${encodeURIComponent(recipientEmail)}?subject=${encodeURIComponent(
+      subject
+    )}&body=${encodeURIComponent(message)}`;
+    window.open(mailtoUrl, '_blank');
+    notify.success('Mail Client Opened', `Drafted message for ${recipientEmail} in your email app.`);
+    recordEmailLogLocally(recipientEmail, recipientName, selectedFormats, `MAILTO-${Date.now().toString().slice(-6)}`);
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -172,6 +189,33 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
             </div>
           )}
 
+          {/* Quick Recipient Presets */}
+          <div>
+            <span className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+              ⚡ Quick Recipient Presets (1-Click)
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { email: 'registrar@stanford.edu', name: 'Stanford Registrar Office', role: '🎓 Registrar' },
+                { email: 'hr-compliance@trustchain.ai', name: 'Marcus Chen (Apex HR)', role: '🏢 Corporate HR' },
+                { email: 'alex.mercer@alumni.stanford.edu', name: 'Alex Mercer', role: '👤 Applicant' },
+              ].map((preset) => (
+                <button
+                  key={preset.email}
+                  type="button"
+                  onClick={() => {
+                    setRecipientEmail(preset.email);
+                    setRecipientName(preset.name);
+                    notify.info('Preset Selected', preset.email);
+                  }}
+                  className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:border-brand-primary text-[11px] font-medium text-slate-700 dark:text-slate-300 transition-colors"
+                >
+                  <span className="font-semibold">{preset.role}</span>: {preset.email}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
@@ -254,22 +298,32 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
           </div>
 
           {/* Footer actions */}
-          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end space-x-2">
+          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold"
+              onClick={handleOpenMailto}
+              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
             >
-              Close
+              <span>📧 Open in Native Email App (mailto:)</span>
             </button>
-            <button
-              type="submit"
-              disabled={isSending}
-              className="px-5 py-2 rounded-lg bg-brand-primary hover:bg-blue-600 text-white text-xs font-bold shadow-md flex items-center space-x-1.5 disabled:opacity-50"
-            >
-              <span>{isSending ? 'Dispatching...' : 'Dispatch Report Now'}</span>
-              <span>🚀</span>
-            </button>
+
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold"
+              >
+                Close
+              </button>
+              <button
+                type="submit"
+                disabled={isSending}
+                className="px-5 py-2 rounded-lg bg-brand-primary hover:bg-blue-600 text-white text-xs font-bold shadow-md flex items-center space-x-1.5 disabled:opacity-50"
+              >
+                <span>{isSending ? 'Dispatching...' : 'Dispatch Report Now'}</span>
+                <span>🚀</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>

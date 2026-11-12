@@ -12,7 +12,9 @@ interface AuthContextType {
   register: (data: any) => Promise<void>;
   logout: () => void;
   switchDemoRole: (role: UserRole) => Promise<void>;
-  loginAsGuest: () => void;
+  loginAsGuest: () => User;
+  loginWithGoogle: () => Promise<User>;
+  updateProfile: (profileData: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -86,13 +88,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           setUser(JSON.parse(savedUser));
         } catch {
-          setUser(DEMO_PROFILES.individual);
+          setUser(null);
         }
       } else {
-        // Pre-populate individual demo persona for immediate accessibility
-        setUser(DEMO_PROFILES.individual);
-        localStorage.setItem('trustchain_token', 'tc_demo_token_individual');
-        localStorage.setItem('trustchain_user', JSON.stringify(DEMO_PROFILES.individual));
+        setUser(null);
       }
       setIsLoading(false);
     };
@@ -244,8 +243,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginAsGuest = () => {
-    switchDemoRole('individual');
+  const loginAsGuest = (): User => {
+    soundEffects.playAction();
+    const guestUser: User = {
+      id: `usr_guest_${Date.now()}`,
+      email: 'guest.explorer@trustchain.ai',
+      full_name: 'Guest Explorer',
+      role: 'individual',
+      organization_name: 'Independent Credential Lab',
+      organization_type: 'Individual',
+      designation: 'Guest Auditor',
+      country: 'United States',
+      is_active: true,
+      is_verified: true,
+      created_at: new Date().toISOString(),
+    };
+    localStorage.setItem('trustchain_token', `tc_token_guest_${Date.now()}`);
+    localStorage.setItem('trustchain_user', JSON.stringify(guestUser));
+    setUser(guestUser);
+    soundEffects.playSuccess();
+    return guestUser;
+  };
+
+  const loginWithGoogle = async (): Promise<User> => {
+    setIsLoading(true);
+    soundEffects.playAction();
+    await new Promise((r) => setTimeout(r, 600)); // Smooth auth handshake simulation
+    const googleUser: User = {
+      id: `usr_google_${Date.now()}`,
+      email: 'alex.mercer.academic@gmail.com',
+      full_name: 'Alex Mercer',
+      role: 'individual',
+      organization_name: 'Stanford University Alumni',
+      organization_type: 'University',
+      designation: 'Researcher / Graduate',
+      country: 'United States',
+      is_active: true,
+      is_verified: true,
+      created_at: new Date().toISOString(),
+    };
+    localStorage.setItem('trustchain_token', `tc_token_google_${Date.now()}`);
+    localStorage.setItem('trustchain_user', JSON.stringify(googleUser));
+    setUser(googleUser);
+    soundEffects.playSuccess();
+    setIsLoading(false);
+    return googleUser;
+  };
+
+  const updateProfile = (profileData: Partial<User>) => {
+    setUser((prev) => {
+      const base = prev || DEMO_PROFILES.individual;
+      const updated: User = { ...base, ...profileData };
+      localStorage.setItem('trustchain_user', JSON.stringify(updated));
+      localStorage.setItem('tc_profile_completed', 'true');
+      soundEffects.playSuccess();
+      return updated;
+    });
   };
 
   const role = user?.role || 'individual';
@@ -263,6 +316,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         switchDemoRole,
         loginAsGuest,
+        loginWithGoogle,
+        updateProfile,
       }}
     >
       {children}

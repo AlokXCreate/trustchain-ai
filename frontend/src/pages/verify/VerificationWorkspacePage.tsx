@@ -34,7 +34,7 @@ import {
   ArrowLeft,
   BotMessageSquare,
 } from 'lucide-react';
-import { VerificationResult, DocumentItem, AIAnalysisResult, AnomalyFinding, OCRTextBlock, TamperRegion } from '../../types';
+import { VerificationResult, DocumentItem, AIAnalysisResult, AnomalyFinding, OCRTextBlock, TamperRegion, DocumentCategory } from '../../types';
 import { api } from '../../services/api';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -101,18 +101,47 @@ export const VerificationWorkspacePage: React.FC = () => {
         });
       }
     } catch {
-      // Offline / Demo fallback
-      const isSuspicious = targetId.includes('suspicious') || targetId.includes('0004');
+      // Offline / Demo fallback: Check if user uploaded this document locally
+      let matchedDoc: DocumentItem | null = null;
+      try {
+        const rawDocs = localStorage.getItem('tc_local_docs');
+        if (rawDocs) {
+          const list: DocumentItem[] = JSON.parse(rawDocs);
+          matchedDoc = list.find((d) => d.id === targetId) || null;
+        }
+      } catch {}
+
+      let customAnalysis: any = null;
+      try {
+        const rawAnalysis = localStorage.getItem(`tc_analysis_${targetId}`);
+        if (rawAnalysis) {
+          customAnalysis = JSON.parse(rawAnalysis);
+        }
+      } catch {}
+
+      const isSuspicious =
+        customAnalysis?.is_tampered ??
+        (targetId.includes('suspicious') ||
+          targetId.includes('0004') ||
+          (matchedDoc?.name && matchedDoc.name.toLowerCase().includes('dubious')));
+
+      const docName = matchedDoc?.name || (isSuspicious ? 'Dubious_FastTrack_Diploma_Certificate.pdf' : 'Stanford_University_BS_Computer_Science.pdf');
+      const docCat = (matchedDoc?.category as DocumentCategory) || (isSuspicious ? 'skill' : 'degree');
+      const docIssuer = matchedDoc?.issuer_name || (isSuspicious ? 'Global FastTrack Academy' : 'Stanford University');
+      const docCert = matchedDoc?.certificate_number || (isSuspicious ? 'FAKE-CERT-991' : 'STAN-CS-2024-8841');
+      const docScore = customAnalysis?.risk_score ?? (isSuspicious ? 78 : 12);
+      const docStatus = customAnalysis?.status ?? (isSuspicious ? 'review_required' : 'verified');
+
       const fallbackDoc: DocumentItem = {
         id: targetId,
-        name: isSuspicious ? 'Dubious_FastTrack_Diploma_Certificate.pdf' : 'Stanford_University_BS_Computer_Science.pdf',
-        category: isSuspicious ? 'skill' : 'degree',
+        name: docName,
+        category: docCat,
         file_type: 'application/pdf',
         file_size_bytes: 2458000,
         uploaded_by: 'individual@trustchain.ai',
-        status: isSuspicious ? 'review_required' : 'verified',
-        issuer_name: isSuspicious ? 'Global FastTrack Academy' : 'Stanford University',
-        certificate_number: isSuspicious ? 'FAKE-CERT-991' : 'STAN-CS-2024-8841',
+        status: docStatus,
+        issuer_name: docIssuer,
+        certificate_number: docCert,
         created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
       };
       setDocDetails(fallbackDoc);
@@ -120,17 +149,17 @@ export const VerificationWorkspacePage: React.FC = () => {
       const fallbackResult: VerificationResult = {
         id: `verif_${targetId}`,
         document_id: targetId,
-        status: isSuspicious ? 'review_required' : 'verified',
+        status: docStatus,
         confidence: isSuspicious ? 0.35 : 0.98,
-        risk_score: isSuspicious ? 78 : 12,
+        risk_score: docScore,
         blockchain_status: isSuspicious ? 'unregistered' : 'anchored',
-        blockchain_tx_hash: '0x4a9d72e81b6f0c3a5982e4f019c8d23e5a7b1c4e9f0d8a6b4c2e1f3a5b7d9e0f',
+        blockchain_tx_hash: isSuspicious ? null : '0x4a9d72e81b6f0c3a5982e4f019c8d23e5a7b1c4e9f0d8a6b4c2e1f3a5b7d9e0f',
         extracted_data: {
           'Candidate Name': 'Alex Mercer',
-          'Conferring University': isSuspicious ? 'Global FastTrack Academy' : 'Stanford University',
-          'Degree Conferral': 'Bachelor of Science in Computer Science',
+          'Conferring University': docIssuer,
+          'Degree Conferral': docCat === 'degree' ? 'Bachelor of Science in Computer Science' : 'Certified Credential',
           'Conferral Date': 'June 18, 2024',
-          'Academic Distinction': 'Magna Cum Laude',
+          'Academic Distinction': isSuspicious ? 'Standard Pass' : 'Magna Cum Laude',
         },
         anomaly_findings: isSuspicious
           ? [
@@ -158,9 +187,9 @@ export const VerificationWorkspacePage: React.FC = () => {
       const fallbackAiData: AIAnalysisResult = {
         report_id: `TC-REPORT-2026-${targetId.replace('doc_', '')}`,
         document_id: targetId,
-        status: isSuspicious ? 'review_required' : 'verified',
+        status: docStatus,
         document_type: {
-          predicted_type: isSuspicious ? 'Skill Certificate' : 'Degree Certificate',
+          predicted_type: docCat === 'degree' ? 'Degree Certificate' : docCat === 'internship' ? 'Internship Certificate' : 'Skill Certificate',
           confidence: 0.984,
           alternatives: [],
         },
@@ -178,7 +207,7 @@ export const VerificationWorkspacePage: React.FC = () => {
           pages: [
             {
               page_number: 1,
-              extracted_text: 'Stanford University confers upon Alex Mercer the degree of Bachelor of Science in Computer Science...',
+              extracted_text: `${docIssuer} confers upon Alex Mercer the credential for ${docName}...`,
               text_blocks: [],
             },
           ],
@@ -186,8 +215,8 @@ export const VerificationWorkspacePage: React.FC = () => {
         extracted_information: {
           extracted_fields: {
             candidate_name: { field_name: 'Candidate Name', value: 'Alex Mercer', confidence: 0.99 },
-            institution_name: { field_name: 'Conferring University', value: isSuspicious ? 'Global FastTrack Academy' : 'Stanford University', confidence: 0.98 },
-            degree_title: { field_name: 'Degree Conferral', value: 'Bachelor of Science in Computer Science', confidence: 0.99 },
+            institution_name: { field_name: 'Conferring University', value: docIssuer, confidence: 0.98 },
+            degree_title: { field_name: 'Degree Conferral', value: docCat === 'degree' ? 'Bachelor of Science in Computer Science' : 'Certified Credential', confidence: 0.99 },
             conferral_date: { field_name: 'Conferral Date', value: 'June 18, 2024', confidence: 0.97 },
           },
         },
@@ -202,7 +231,7 @@ export const VerificationWorkspacePage: React.FC = () => {
           suspicious_regions: [],
         },
         risk_assessment: {
-          risk_score: isSuspicious ? 78 : 12,
+          risk_score: docScore,
           category_key: isSuspicious ? 'high_risk' : 'low_risk',
           category_label: isSuspicious ? 'Elevated Risk Indicators' : 'Low Risk Indicators',
           verdict_phrase: isSuspicious ? 'Potential Tampering Detected' : 'Cryptographically Verified',

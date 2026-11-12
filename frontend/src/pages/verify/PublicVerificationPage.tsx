@@ -28,6 +28,8 @@ import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { useNotification } from '../../context/NotificationContext';
 import { ReportDownloadDropdown } from '../../components/reports/ReportDownloadDropdown';
+import { QrScannerModal } from '../../components/scanner/QrScannerModal';
+import { Camera } from 'lucide-react';
 
 export const PublicVerificationPage: React.FC = () => {
   const { credentialId: urlCredentialId } = useParams<{ credentialId?: string }>();
@@ -37,6 +39,7 @@ export const PublicVerificationPage: React.FC = () => {
   const [credIdInput, setCredIdInput] = useState(urlCredentialId || 'TC-2026-MIT941');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [qrTextInput, setQrTextInput] = useState('');
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [result, setResult] = useState<BlockchainVerifyResponse | null>(null);
@@ -411,33 +414,48 @@ export const PublicVerificationPage: React.FC = () => {
             </form>
           )}
 
-          {/* Tab 3: QR Code Text */}
+          {/* Tab 3: QR Code Text & Live Camera Scan */}
           {activeTab === 'qr' && (
-            <form onSubmit={handleVerifyByQrText} className="space-y-4">
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                Paste QR Code Payload or Verification URL
-              </label>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1">
-                  <QrCode className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                  <input
-                    type="text"
-                    value={qrTextInput}
-                    onChange={(e) => setQrTextInput(e.target.value)}
-                    placeholder="https://trustchain.ai/verify/credential/TC-2026-MIT941"
-                    className="w-full pl-9 pr-4 py-2.5 text-sm rounded-lg border border-slate-300 dark:border-navy-700 bg-white dark:bg-navy-950 text-brand-text dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  disabled={isLoading || !qrTextInput.trim()}
-                  className="whitespace-nowrap"
-                >
-                  Decode & Verify
-                </Button>
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={() => setIsScannerOpen(true)}
+                className="w-full py-4 px-6 rounded-2xl border-2 border-dashed border-cyan-400/70 hover:border-cyan-500 bg-cyan-50/60 dark:bg-cyan-950/30 text-cyan-800 dark:text-cyan-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-3 transition-all shadow-sm hover:shadow"
+              >
+                <Camera className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+                <span>Open Live Camera QR Scanner or Upload Image</span>
+              </button>
+
+              <div className="relative flex items-center justify-center my-2">
+                <div className="border-t border-slate-200 dark:border-navy-700 w-full" />
+                <span className="bg-white dark:bg-navy-900 px-3 text-[10px] font-bold uppercase text-slate-400 absolute">
+                  Or paste URL payload manually
+                </span>
               </div>
-            </form>
+
+              <form onSubmit={handleVerifyByQrText} className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <QrCode className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={qrTextInput}
+                      onChange={(e) => setQrTextInput(e.target.value)}
+                      placeholder="https://trustchain.ai/verify/credential/TC-2026-MIT941"
+                      className="w-full pl-9 pr-4 py-2.5 text-sm rounded-lg border border-slate-300 dark:border-navy-700 bg-white dark:bg-navy-950 text-brand-text dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={isLoading || !qrTextInput.trim()}
+                    className="whitespace-nowrap"
+                  >
+                    Decode & Verify
+                  </Button>
+                </div>
+              </form>
+            </div>
           )}
 
           {/* Error Message */}
@@ -682,6 +700,17 @@ export const PublicVerificationPage: React.FC = () => {
           TrustChain AI — Intelligent Digital Credential & Document Authentication Platform &copy; 2026.
         </p>
       </footer>
+
+      {/* QR / Barcode Scanner Modal */}
+      <QrScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScanResult={(val) => {
+          setQrTextInput(val);
+          setCredIdInput(val);
+          handleVerifyById(val);
+        }}
+      />
     </div>
   );
 };

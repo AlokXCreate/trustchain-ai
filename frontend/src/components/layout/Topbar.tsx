@@ -13,6 +13,7 @@ import {
   VolumeX,
   Key,
   Cpu,
+  QrCode,
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -21,6 +22,7 @@ import { UserRole, NotificationItem } from '../../types';
 import { api } from '../../services/api';
 import { aiProviderService } from '../../services/aiProviderService';
 import { ApiKeyModal } from '../settings/ApiKeyModal';
+import { QrScannerModal } from '../scanner/QrScannerModal';
 
 export const Topbar: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
@@ -34,6 +36,7 @@ export const Topbar: React.FC = () => {
   const [showRoleMenu, setShowRoleMenu] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
   const [activeModelName, setActiveModelName] = useState(() => aiProviderService.getActiveProviderName());
 
   useEffect(() => {
@@ -157,7 +160,17 @@ export const Topbar: React.FC = () => {
         </div>
 
         {/* Right Actions & Switchers */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          {/* QR / Barcode Scanner Quick Action */}
+          <button
+            onClick={() => setIsQrScannerOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-cyan-200 dark:border-cyan-900/60 bg-cyan-50/70 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 text-xs font-semibold hover:bg-cyan-100/60 transition-colors shadow-sm"
+            title="Scan Certificate QR / Barcode"
+          >
+            <QrCode className="w-3.5 h-3.5 text-cyan-500" />
+            <span className="hidden md:inline">Scan QR</span>
+          </button>
+
           {/* AI Model Status & API Key Config Button */}
           <button
             onClick={() => setIsApiKeyModalOpen(true)}
@@ -298,6 +311,12 @@ export const Topbar: React.FC = () => {
         isOpen={isApiKeyModalOpen}
         onClose={() => setIsApiKeyModalOpen(false)}
         onSaved={() => setActiveModelName(aiProviderService.getActiveProviderName())}
+      />
+
+      {/* QR / Barcode Scanner Modal */}
+      <QrScannerModal
+        isOpen={isQrScannerOpen}
+        onClose={() => setIsQrScannerOpen(false)}
       />
     </>
   );
