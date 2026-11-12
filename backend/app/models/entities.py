@@ -8,6 +8,9 @@ from app.models.enums import (
     CredentialStatus,
     InstitutionStatus,
     AuditEventType,
+    ReportFormat,
+    EmailDeliveryStatus,
+    RiskCategory,
 )
 
 
@@ -157,3 +160,64 @@ class VerificationBatch(BaseModel):
     status: str = "processing"
     created_at: datetime = Field(default_factory=datetime.utcnow)
     completed_at: Optional[datetime] = None
+
+
+class Report(BaseModel):
+    id: str  # e.g. "TC-REP-2026-00101"
+    document_id: str
+    verification_session_id: str
+    document_name: str
+    category: str
+    status: str  # "verified", "review_required", "failed"
+    risk_score: int  # 0 to 100
+    risk_category: str  # "Low Risk", "Moderate Risk", "High Risk", "Critical Risk"
+    confidence: float = 0.95
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    generated_by: str = "TrustChain Automated Engine"
+    confidentiality: str = "CONFIDENTIAL // OFFICIAL VERIFICATION DOSSIER"
+    report_data: Dict[str, Any] = Field(default_factory=dict)
+    integrity_hash: str  # SHA-256 of canonical report JSON
+    version: int = 1
+    is_archived: bool = False
+    available_formats: List[str] = Field(default_factory=lambda: ["pdf", "docx", "json", "html"])
+
+
+class ReportSummary(BaseModel):
+    id: str
+    document_id: str
+    document_name: str
+    category: str
+    status: str
+    risk_score: int
+    risk_category: str
+    created_at: datetime
+    generated_by: str
+    integrity_hash: str
+    is_archived: bool = False
+    available_formats: List[str]
+
+
+class EmailDeliveryLog(BaseModel):
+    id: str
+    report_id: str
+    recipient_email: str
+    recipient_name: Optional[str] = None
+    subject: str
+    formats_attached: List[str]
+    status: EmailDeliveryStatus = EmailDeliveryStatus.QUEUED
+    sent_at: datetime = Field(default_factory=datetime.utcnow)
+    error_message: Optional[str] = None
+    delivery_proof: Optional[Dict[str, Any]] = None
+
+
+class ReportSchedule(BaseModel):
+    id: str
+    name: str
+    frequency: str  # "daily", "weekly", "monthly"
+    report_type: str  # "all", "high_risk_only", "batch_summary"
+    recipient_emails: List[str]
+    is_active: bool = True
+    last_run_at: Optional[datetime] = None
+    next_run_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+

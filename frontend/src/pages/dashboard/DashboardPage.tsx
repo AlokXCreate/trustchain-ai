@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Building,
   RefreshCw,
+  FileText,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -354,7 +355,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Quick Actions Panel */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
         <button
           onClick={() => navigate('/app/upload')}
           className="p-3.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-850 hover:border-brand-accent/60 hover:shadow-subtle transition-all text-left group"
@@ -362,6 +363,15 @@ export const DashboardPage: React.FC = () => {
           <Upload className="w-5 h-5 text-brand-accent mb-2 group-hover:scale-110 transition-transform" />
           <p className="text-xs font-bold text-brand-text dark:text-white">Upload & Verify</p>
           <p className="text-[10px] text-brand-muted dark:text-slate-400">New document check</p>
+        </button>
+
+        <button
+          onClick={() => navigate('/app/reports')}
+          className="p-3.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-850 hover:border-brand-accent/60 hover:shadow-subtle transition-all text-left group"
+        >
+          <FileText className="w-5 h-5 text-blue-500 mb-2 group-hover:scale-110 transition-transform" />
+          <p className="text-xs font-bold text-brand-text dark:text-white">Report Center</p>
+          <p className="text-[10px] text-brand-muted dark:text-slate-400">PDF & Word export</p>
         </button>
 
         <button

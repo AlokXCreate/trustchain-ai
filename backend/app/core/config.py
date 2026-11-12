@@ -1,6 +1,13 @@
 import os
 from typing import List
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
+try:
+    from pydantic_settings import BaseSettings, SettingsConfigDict
+except ImportError:
+    from pydantic import BaseModel as BaseSettings
+    class SettingsConfigDict(dict):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
 
 
 class Settings(BaseSettings):
@@ -42,7 +49,17 @@ class Settings(BaseSettings):
     
     # File Storage
     UPLOAD_DIR: str = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
+    REPORT_OUTPUT_DIR: str = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports_generated")
     MAX_FILE_SIZE_MB: int = 15
+
+    # SMTP Email Delivery (Enterprise Reporting)
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = "verify@trustchain-ai.org"
+    SMTP_FROM_NAME: str = "TrustChain AI Verification System"
+    SMTP_TLS: bool = True
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -53,5 +70,6 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Ensure uploads directory exists
+# Ensure uploads and reports directories exist
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+os.makedirs(settings.REPORT_OUTPUT_DIR, exist_ok=True)

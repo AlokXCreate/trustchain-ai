@@ -393,3 +393,102 @@ export interface BlockchainVerifyResponse {
   filename?: string;
   file_size_bytes?: number;
 }
+
+export interface ReportSummary {
+  id: string;
+  document_id: string;
+  document_name: string;
+  category: string;
+  status: string;
+  risk_score: number;
+  risk_category: string;
+  created_at: string;
+  generated_by: string;
+  integrity_hash: string;
+  is_archived: boolean;
+  available_formats: string[];
+}
+
+export interface Report extends ReportSummary {
+  verification_session_id: string;
+  confidence: number;
+  confidentiality: string;
+  report_data: Record<string, any>;
+  version: number;
+}
+
+export interface ReportDashboardStats {
+  total_reports: number;
+  today_reports: number;
+  verified_reports: number;
+  review_required_reports: number;
+  failed_reports: number;
+  recent_reports: Array<{
+    id: string;
+    document_name: string;
+    category: string;
+    status: string;
+    risk_score: number;
+    risk_category: string;
+    created_at: string;
+  }>;
+}
+
+export interface EmailDeliveryLog {
+  id: string;
+  report_id: string;
+  recipient_email: string;
+  recipient_name?: string;
+  subject: string;
+  formats_attached: string[];
+  status: 'queued' | 'sending' | 'sent' | 'failed';
+  sent_at: string;
+  error_message?: string;
+  delivery_proof?: Record<string, any>;
+}
+
+export interface ReportCompareResult {
+  report_1: {
+    id: string;
+    document_name: string;
+    status: string;
+    risk_score: number;
+    risk_category: string;
+    created_at: string;
+  };
+  report_2: {
+    id: string;
+    document_name: string;
+    status: string;
+    risk_score: number;
+    risk_category: string;
+    created_at: string;
+  };
+  metrics: {
+    risk_score_delta: number;
+    status_changed: boolean;
+    risk_category_changed: boolean;
+    field_matches: number;
+    field_mismatches: number;
+  };
+  field_comparisons: Array<{
+    field: string;
+    val_report_1: string;
+    val_report_2: string;
+    is_matching: boolean;
+  }>;
+}
+
+export interface PublicReportVerifyResponse {
+  report_id: string;
+  is_authentic: boolean;
+  verification_status: string;
+  risk_category: string;
+  category: string;
+  issued_at: string;
+  issuer: string;
+  integrity_hash: string;
+  blockchain_anchored: boolean;
+  system: string;
+}
+

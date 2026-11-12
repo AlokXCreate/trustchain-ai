@@ -83,7 +83,34 @@ The core inspection surface (`/verify/results/:documentId`) compiles all forensi
 
 ---
 
-## 4. Quick Start & Execution
+## 4. Enterprise Reporting & One-Click Delivery Engine
+
+TrustChain AI incorporates an automatic, non-blocking enterprise report engine that activates whenever a verification task completes:
+
+1. **Automatic Report Triggering**: Non-blocking compilation of an 11-section structured dossier with cryptographic SHA-256 integrity checksums.
+2. **Four Professional Export Formats**:
+   - **PDF Report (`.pdf`)**: Formatted using ReportLab with cover page, risk gauges, ELA compression visuals, embedded scannable QR verification code, and "Page X of Y" canvas.
+   - **Microsoft Word (`.docx`)**: Fully editable document generated using `python-docx` with professional headers, margins, borders, and structured tables.
+   - **JSON Schema (`.json`)**: Machine-readable specification conforming to TrustChain AI Enterprise Verification Schema v1.2.
+   - **Standalone HTML (`.html`)**: Self-contained, responsive, print-friendly report with embedded SVG assets and interactive print controls.
+3. **Centralized Report Center (`/app/reports`)**:
+   - Executive dashboard tracking Total Reports, Generated Today, Low Risk, and Review Required.
+   - Search by ID/filename, filter by risk level or verification state, sort, pagination, and archive management.
+   - **Dual Dossier Comparison**: Side-by-side comparative inspection highlighting risk deltas, field discrepancies, and blockchain status changes.
+   - **Cryptographic Integrity Verification**: Validates report data against on-chain SHA-256 digests to detect offline file tampering.
+4. **One-Click SMTP Email Delivery (`/app/emails`)**:
+   - Configurable SMTP integration (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`).
+   - Secure email composer supporting multi-format attachments (PDF, DOCX, JSON, HTML) with duplicate-send throttling.
+   - Real-time transmission logging and honest diagnostic reporting if SMTP settings are not yet populated.
+5. **Dynamic 5-Second Application Intro**:
+   - Smooth opening sequence with animated cyber grid, glowing shield, SVG checkmark draw, typography reveal, and tagline.
+   - Session-cached (`sessionStorage`), accessible (respects reduced-motion), with an instant "Skip Intro" option.
+6. **Public Scannable QR Verification (`/verify/report/:reportId`)**:
+   - Enables any smartphone camera or third-party verifier to validate report authenticity and checksums without exposing private student PII.
+
+---
+
+## 5. Quick Start & Execution
 
 ### Option A: Local Development Run (Windows Scripts)
 
@@ -95,6 +122,8 @@ The core inspection surface (`/verify/results/:documentId`) compiles all forensi
 ```
 
 - **Frontend Portal**: `http://localhost:5173`
+- **Report Center**: `http://localhost:5173/#/app/reports`
+- **Email History**: `http://localhost:5173/#/app/emails`
 - **Backend REST API**: `http://127.0.0.1:8000`
 - **Interactive Swagger Docs**: `http://127.0.0.1:8000/docs`
 
@@ -106,7 +135,7 @@ docker compose up --build -d
 
 ---
 
-## 5. Pre-Configured Demo Personas
+## 6. Pre-Configured Demo Personas
 
 TrustChain AI includes an integrated **Demonstration Mode** (`DEMO_MODE=true`), allowing evaluators and recruiters to test all role-based features without configuring external credentials:
 
@@ -119,12 +148,18 @@ TrustChain AI includes an integrated **Demonstration Mode** (`DEMO_MODE=true`), 
 
 ---
 
-## 6. Comprehensive Automated Test Suite (74 Tests)
+## 7. Comprehensive Automated Test Suite
 
-### Backend Tests (53 Tests — 100% Passing)
+### Reporting Engine & Export Tests
+```bash
+python backend/tests/test_reporting_engine.py
+```
+- Validates seeded reports, PDF generation with QR widget, editable Word document generation, JSON schema validation, HTML report compilation, SHA-256 integrity checks, and dual-report comparison diffs.
+
+### Backend Pipeline Tests
 ```bash
 cd backend
-.venv\Scripts\pytest -v
+pytest -v
 ```
 - `tests/test_ai_pipeline.py`: 17 tests (computer vision, ELA, OCR, risk scoring, PDF generation)
 - `tests/test_api.py`: 8 tests (auth, JWT, document ingestion, verification endpoints)
@@ -140,7 +175,7 @@ npx hardhat test
 
 ---
 
-## 7. Technical Documentation Package
+## 8. Technical Documentation Package
 
 Detailed engineering specifications and operational guides are organized in the `docs/` directory:
 
@@ -149,13 +184,13 @@ Detailed engineering specifications and operational guides are organized in the 
 - [Blockchain Architecture](docs/BLOCKCHAIN_ARCHITECTURE.md): Zero-PII model, Keccak-256 / SHA-256 hashing, and Ethereum Sepolia integration.
 - [Smart Contract Specification](docs/SMART_CONTRACT_DOCUMENTATION.md): Functions, events, errors, gas benchmarks, and test coverage report.
 - [Security & Privacy](docs/SECURITY_AND_PRIVACY.md): Threat modeling, path traversal mitigations, prompt injection defenses, and RBAC.
-- [Testing Guide](docs/TESTING_GUIDE.md): Complete instructions for running all 74 unit and end-to-end tests.
+- [Testing Guide](docs/TESTING_GUIDE.md): Complete instructions for running all unit and end-to-end tests.
 - [Deployment Guide](docs/DEPLOYMENT_GUIDE.md): Local development vs. production Docker Compose deployment instructions.
 - [Demonstration Guide](docs/DEMO_GUIDE.md): 20-step evaluator presentation sequence with click paths and speaker notes.
 
 ---
 
-## 8. Responsible AI & Verification Ethics
+## 9. Responsible AI & Verification Ethics
 
 In compliance with academic, employment, and legal standards:
 - **Calibrated Risk Tiers**: The platform strictly categorizes documents as `Low Risk`, `Moderate Risk`, `Elevated Risk`, or `Requires Manual Review`.
@@ -164,6 +199,6 @@ In compliance with academic, employment, and legal standards:
 
 ---
 
-## 9. License
+## 10. License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.

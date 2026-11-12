@@ -211,6 +211,20 @@ class VerificationService:
         doc.status = final_status
         doc.verification_result_id = result_id
 
+        # Automatic Professional Report Generation (Non-blocking)
+        try:
+            from app.services.reporting.report_service import report_service
+            report_service.create_report_for_verification(
+                doc=doc,
+                result=result,
+                user_id=user_id,
+                user_name=user_name
+            )
+        except Exception as e:
+            # Preserve verification result and log anomaly if report generation fails
+            import logging
+            logging.getLogger("trustchain").error(f"Automatic report generation deferred: {str(e)}")
+
         audit_service.log_event(
             user_id=user_id,
             user_name=user_name,

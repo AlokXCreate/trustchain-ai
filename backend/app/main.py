@@ -15,7 +15,9 @@ from app.api.routes import (
     assistant,
     ai_analysis,
     blockchain,
-    rag
+    rag,
+    reports,
+    email
 )
 
 app = FastAPI(
@@ -50,6 +52,8 @@ app.include_router(assistant.router, prefix=settings.API_V1_STR)
 app.include_router(ai_analysis.router, prefix=settings.API_V1_STR)
 app.include_router(blockchain.router, prefix=settings.API_V1_STR)
 app.include_router(rag.router, prefix=settings.API_V1_STR)
+app.include_router(reports.router, prefix=settings.API_V1_STR)
+app.include_router(email.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")

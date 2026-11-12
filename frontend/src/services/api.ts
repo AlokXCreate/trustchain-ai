@@ -85,6 +85,20 @@ class ApiClient {
     return response.json();
   }
 
+  async patch<T>(endpoint: string, body?: any): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      method: 'PATCH',
+      headers: this.getAuthHeaders(),
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ detail: response.statusText }));
+      throw new Error(err.detail || 'Failed to update record');
+    }
+    return response.json();
+  }
+
   async delete<T>(endpoint: string): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: 'DELETE',
@@ -97,6 +111,30 @@ class ApiClient {
     }
     return response.json();
   }
+
+  async downloadBlob(endpoint: string): Promise<{ blob: Blob; filename: string }> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to download file');
+    }
+
+    const disposition = response.headers.get('Content-Disposition');
+    let filename = 'download';
+    if (disposition && disposition.indexOf('filename=') !== -1) {
+      const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+      if (matches != null && matches[1]) {
+        filename = matches[1].replace(/['"]/g, '');
+      }
+    }
+
+    const blob = await response.blob();
+    return { blob, filename };
+  }
+
   getBaseUrl(): string {
     return this.baseUrl;
   }

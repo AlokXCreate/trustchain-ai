@@ -62,3 +62,29 @@ class AuditEventType(str, Enum):
     BLOCKCHAIN_REGISTRATION = "blockchain_registration"
     BLOCKCHAIN_VERIFY = "blockchain_verify"
     BLOCKCHAIN_REVOCATION = "blockchain_revocation"
+    REPORT_DOWNLOAD = "report_download"
+    REPORT_EMAIL = "report_email"
+    REPORT_INTEGRITY_CHECK = "report_integrity_check"
+    REPORT_REGENERATION = "report_regeneration"
+
+
+class RiskCategory(str, Enum):
+    LOW_RISK = "Low Risk"
+    MODERATE_RISK = "Moderate Risk"
+    HIGH_RISK = "High Risk"
+    CRITICAL_RISK = "Critical Risk"
+
+
+class ReportFormat(str, Enum):
+    PDF = "pdf"
+    DOCX = "docx"
+    JSON = "json"
+    HTML = "html"
+
+
+class EmailDeliveryStatus(str, Enum):
+    QUEUED = "queued"
+    SENDING = "sending"
+    SENT = "sent"
+    FAILED = "failed"
+

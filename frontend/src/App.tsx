@@ -21,6 +21,11 @@ const AIAssistantPage = lazy(() => import('./pages/assistant/AIAssistantPage').t
 const AnalyticsPage = lazy(() => import('./pages/analytics/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
 const AuditTrailPage = lazy(() => import('./pages/audit/AuditTrailPage').then(m => ({ default: m.AuditTrailPage })));
 const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const ReportCenterPage = lazy(() => import('./pages/reports/ReportCenterPage').then(m => ({ default: m.ReportCenterPage })));
+const ReportDetailPage = lazy(() => import('./pages/reports/ReportDetailPage').then(m => ({ default: m.ReportDetailPage })));
+const EmailHistoryPage = lazy(() => import('./pages/email/EmailHistoryPage').then(m => ({ default: m.EmailHistoryPage })));
+const PublicReportVerifyPage = lazy(() => import('./pages/reports/PublicReportVerifyPage').then(m => ({ default: m.PublicReportVerifyPage })));
+import { IntroAnimation } from './components/intro/IntroAnimation';
 
 const RouteLoadingFallback: React.FC = () => (
   <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 space-y-3">
@@ -33,6 +38,7 @@ export const App: React.FC = () => {
   return (
     <ThemeProvider>
       <AuthProvider>
+        <IntroAnimation onComplete={() => {}} />
         <HashRouter>
           <Suspense fallback={<RouteLoadingFallback />}>
             <Routes>
@@ -40,6 +46,7 @@ export const App: React.FC = () => {
               <Route path="/" element={<LandingPage />} />
               <Route path="/verify/public" element={<PublicVerificationPage />} />
               <Route path="/verify/credential/:credentialId" element={<PublicVerificationPage />} />
+              <Route path="/verify/report/:reportId" element={<PublicReportVerifyPage />} />
               <Route path="/verify-credential" element={<PublicVerificationPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
@@ -53,6 +60,9 @@ export const App: React.FC = () => {
                 <Route path="verify" element={<VerificationWorkspacePage />} />
                 <Route path="verify/:docId" element={<VerificationWorkspacePage />} />
                 <Route path="history" element={<VerificationHistoryPage />} />
+                <Route path="reports" element={<ReportCenterPage />} />
+                <Route path="reports/:reportId" element={<ReportDetailPage />} />
+                <Route path="emails" element={<EmailHistoryPage />} />
                 <Route path="credentials" element={<DigitalCredentialsPage />} />
                 <Route path="issuers" element={<IssuerRegistryPage />} />
                 <Route path="bulk" element={<BulkVerificationPage />} />

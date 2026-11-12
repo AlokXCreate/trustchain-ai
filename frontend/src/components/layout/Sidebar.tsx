@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   LogOut,
   ExternalLink,
+  Mail,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Badge } from '../ui/Badge';
@@ -72,6 +73,19 @@ export const Sidebar: React.FC = () => {
             <NavLink to="/app/history" className={navClass}>
               <History className="w-4 h-4 flex-shrink-0" />
               <span>Verification History</span>
+            </NavLink>
+            <NavLink to="/app/reports" className={navClass}>
+              <FileText className="w-4 h-4 flex-shrink-0 text-blue-500" />
+              <div className="flex items-center justify-between flex-1">
+                <span>Report Center</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold uppercase">
+                  PDF/DOCX
+                </span>
+              </div>
+            </NavLink>
+            <NavLink to="/app/emails" className={navClass}>
+              <Mail className="w-4 h-4 flex-shrink-0 text-indigo-500" />
+              <span>Email History</span>
             </NavLink>
             <NavLink to="/app/credentials" className={navClass}>
               <Award className="w-4 h-4 flex-shrink-0" />
