@@ -14,6 +14,9 @@ import {
   Key,
   Cpu,
   QrCode,
+  User,
+  LogOut,
+  Settings,
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -26,7 +29,7 @@ import { QrScannerModal } from '../scanner/QrScannerModal';
 
 export const Topbar: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
-  const { user, role, switchDemoRole } = useAuth();
+  const { user, role, switchDemoRole, logout } = useAuth();
   const { isSoundEnabled, toggleSound, info } = useNotification();
   const location = useLocation();
   const navigate = useNavigate();
@@ -34,6 +37,7 @@ export const Topbar: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [showNotifDrawer, setShowNotifDrawer] = useState<boolean>(false);
   const [showRoleMenu, setShowRoleMenu] = useState<boolean>(false);
+  const [showUserMenu, setShowUserMenu] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
@@ -299,6 +303,87 @@ export const Topbar: React.FC = () => {
                       </p>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* User Profile & Logout Popover */}
+          <div className="relative">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center gap-2 pl-2 pr-2.5 py-1 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-850 hover:border-brand-accent/60 transition-all text-left shadow-sm group"
+              title="User Account & Settings"
+            >
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-brand-accent to-purple-600 text-white font-bold text-xs flex items-center justify-center flex-shrink-0 shadow-sm">
+                {user?.full_name?.charAt(0) || 'U'}
+              </div>
+              <div className="hidden lg:block">
+                <p className="text-xs font-bold text-slate-800 dark:text-white leading-tight truncate max-w-[100px]">
+                  {user?.full_name || 'Alex Mercer'}
+                </p>
+                <p className="text-[10px] text-slate-400 capitalize truncate max-w-[100px]">
+                  {role}
+                </p>
+              </div>
+              <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-navy-850 rounded-2xl shadow-2xl border border-slate-200 dark:border-navy-750 p-2 z-50 animate-fade-in divide-y divide-slate-100 dark:divide-navy-800">
+                <div className="p-2.5">
+                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {user?.full_name || 'Alex Mercer'}
+                  </p>
+                  <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                    {user?.email || 'individual@trustchain.ai'}
+                  </p>
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950 text-brand-accent border border-blue-200 dark:border-blue-900/60 capitalize">
+                      {role} Access
+                    </span>
+                    <span className="text-[10px] text-slate-400 truncate max-w-[120px]">
+                      {user?.organization_name || 'Stanford Alumni'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="py-1">
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      navigate('/app/settings');
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs flex items-center gap-2.5 hover:bg-slate-100 dark:hover:bg-navy-800 text-slate-700 dark:text-slate-200 transition-colors font-medium"
+                  >
+                    <Settings className="w-4 h-4 text-slate-400" />
+                    <span>Profile & Settings</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      navigate('/profile-setup');
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs flex items-center gap-2.5 hover:bg-slate-100 dark:hover:bg-navy-800 text-slate-700 dark:text-slate-200 transition-colors font-medium"
+                  >
+                    <User className="w-4 h-4 text-slate-400" />
+                    <span>Edit Profile Details</span>
+                  </button>
+                </div>
+
+                <div className="pt-1">
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      logout();
+                      info('Signed Out', 'You have been signed out. Please sign in with your desired account.');
+                      navigate('/login');
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs flex items-center gap-2.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 transition-colors font-bold group"
+                  >
+                    <LogOut className="w-4 h-4 text-rose-500 group-hover:translate-x-0.5 transition-transform" />
+                    <span>Log Out / Switch Account</span>
+                  </button>
                 </div>
               </div>
             )}

@@ -360,3 +360,4 @@ export const ProfileSetupPage: React.FC = () => {
     </div>
   );
 };
+

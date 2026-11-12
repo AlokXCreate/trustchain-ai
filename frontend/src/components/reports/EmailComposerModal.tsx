@@ -65,17 +65,24 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
     }
   };
 
-  const handleOpenMailto = () => {
-    if (!recipientEmail || !recipientEmail.includes('@')) {
-      notify.error('Recipient Required', 'Please enter or select a recipient email address.');
-      return;
-    }
-    const mailtoUrl = `mailto:${encodeURIComponent(recipientEmail)}?subject=${encodeURIComponent(
+  const handleOpenGmail = () => {
+    const toParam = recipientEmail && recipientEmail.includes('@') ? `&to=${encodeURIComponent(recipientEmail)}` : '';
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1${toParam}&su=${encodeURIComponent(
       subject
     )}&body=${encodeURIComponent(message)}`;
-    window.open(mailtoUrl, '_blank');
-    notify.success('Mail Client Opened', `Drafted message for ${recipientEmail} in your email app.`);
-    recordEmailLogLocally(recipientEmail, recipientName, selectedFormats, `MAILTO-${Date.now().toString().slice(-6)}`);
+    window.open(gmailUrl, '_blank');
+    notify.success('Gmail Opened', 'Verification dossier ready in Gmail compose window.');
+    recordEmailLogLocally(recipientEmail || 'Draft in Gmail', recipientName, selectedFormats, `GMAIL-${Date.now().toString().slice(-6)}`);
+  };
+
+  const handleOpenMailto = () => {
+    const toParam = recipientEmail && recipientEmail.includes('@') ? encodeURIComponent(recipientEmail) : '';
+    const mailtoUrl = `mailto:${toParam}?subject=${encodeURIComponent(
+      subject
+    )}&body=${encodeURIComponent(message)}`;
+    window.location.href = mailtoUrl;
+    notify.success('Mail Client Opened', `Drafted message in your default email application.`);
+    recordEmailLogLocally(recipientEmail || 'Draft in Mail Client', recipientName, selectedFormats, `MAILTO-${Date.now().toString().slice(-6)}`);
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -298,16 +305,32 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
           </div>
 
           {/* Footer actions */}
-          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={handleOpenMailto}
-              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
-            >
-              <span>📧 Open in Native Email App (mailto:)</span>
-            </button>
+          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                1-Click Native Apps:
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleOpenGmail}
+                  className="px-2.5 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 hover:bg-rose-100 text-[11px] font-bold inline-flex items-center gap-1.5 transition-colors"
+                >
+                  <span className="w-2 h-2 rounded-full bg-rose-500" />
+                  <span>Open in Gmail (1-Click)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenMailto}
+                  className="px-2.5 py-1.5 rounded-lg border border-sky-200 dark:border-sky-900/60 bg-sky-50/70 dark:bg-sky-950/30 text-sky-700 dark:text-sky-300 hover:bg-sky-100 text-[11px] font-bold inline-flex items-center gap-1.5 transition-colors"
+                >
+                  <span className="w-2 h-2 rounded-full bg-sky-500" />
+                  <span>Open in Outlook (mailto:)</span>
+                </button>
+              </div>
+            </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-end space-x-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
               <button
                 type="button"
                 onClick={onClose}
@@ -320,7 +343,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                 disabled={isSending}
                 className="px-5 py-2 rounded-lg bg-brand-primary hover:bg-blue-600 text-white text-xs font-bold shadow-md flex items-center space-x-1.5 disabled:opacity-50"
               >
-                <span>{isSending ? 'Dispatching...' : 'Dispatch Report Now'}</span>
+                <span>{isSending ? 'Dispatching...' : 'Dispatch via Secure Relay'}</span>
                 <span>🚀</span>
               </button>
             </div>

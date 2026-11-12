@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   User,
   Building2,
@@ -11,6 +12,7 @@ import {
   CheckCircle2,
   Sparkles,
   Key,
+  LogOut,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -22,7 +24,8 @@ import { useNotification } from '../../context/NotificationContext';
 import { aiProviderService, AIModelProvider } from '../../services/aiProviderService';
 
 export const SettingsPage: React.FC = () => {
-  const { user, role, switchDemoRole } = useAuth();
+  const { user, role, switchDemoRole, logout } = useAuth();
+  const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const notify = useNotification();
 
@@ -151,6 +154,7 @@ export const SettingsPage: React.FC = () => {
 
       {/* TAB 1: Profile */}
       {activeTab === 'profile' && (
+        <div className="space-y-6">
         <Card className="max-w-2xl p-6">
           <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
             <h2 className="text-sm font-bold text-brand-text dark:text-white border-b border-slate-100 dark:border-navy-800 pb-3">
@@ -216,6 +220,54 @@ export const SettingsPage: React.FC = () => {
             </div>
           </form>
         </Card>
+        {/* Active Account & Session Management Card */}
+        <Card className="max-w-2xl p-6 border-slate-200 dark:border-navy-800 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-navy-800">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-accent to-purple-600 text-white font-bold text-sm flex items-center justify-center">
+                {user?.full_name?.charAt(0) || 'U'}
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-brand-text dark:text-white">
+                  Active Account & Identity
+                </h3>
+                <p className="text-[11px] text-slate-400">
+                  Currently signed in as <span className="font-semibold text-slate-700 dark:text-slate-300">{user?.email || 'individual@trustchain.ai'}</span>
+                </p>
+              </div>
+            </div>
+            <Badge variant="info" size="sm">
+              {role.toUpperCase()}
+            </Badge>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-navy-900 border border-slate-200/80 dark:border-navy-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                Switch Account or Sign Out
+              </p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Sign out to log in with a different email, Google account, or institutional credential.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                logout();
+                notify.info('Logged Out', 'You have been signed out. Please sign in with your desired account.');
+                navigate('/login');
+              }}
+              className="border-rose-300 dark:border-rose-900 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 whitespace-nowrap font-bold"
+              icon={<LogOut className="w-3.5 h-3.5" />}
+            >
+              Log Out & Switch Account
+            </Button>
+          </div>
+        </Card>
+
+        </div>
       )}
 
       {/* TAB 2: Organization */}
