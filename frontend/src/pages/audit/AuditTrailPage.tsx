@@ -18,8 +18,11 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
+import { useNotification } from '../../context/NotificationContext';
+import { ReportDownloadDropdown } from '../../components/reports/ReportDownloadDropdown';
 
 export const AuditTrailPage: React.FC = () => {
+  const notify = useNotification();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [search, setSearch] = useState('');
   const [selectedEventType, setSelectedEventType] = useState<string>('all');
@@ -142,7 +145,7 @@ export const AuditTrailPage: React.FC = () => {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert('Copied hash to clipboard!');
+    notify.success('Hash Copied', 'Cryptographic digest copied to clipboard.');
   };
 
   return (
@@ -163,14 +166,27 @@ export const AuditTrailPage: React.FC = () => {
           </p>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={exportCSV}
-          icon={<Download className="w-3.5 h-3.5" />}
-        >
-          Export Audit Trail (CSV)
-        </Button>
+        <div className="flex items-center gap-2">
+          <ReportDownloadDropdown
+            reportId={`TC-AUDIT-${new Date().toISOString().split('T')[0]}`}
+            documentName="TrustChain_Immutable_Audit_Trail.pdf"
+            category="Compliance Audit"
+            riskScore={2}
+            status="verified"
+            buttonLabel="Export Audit Dossier"
+            variant="primary"
+            size="sm"
+          />
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportCSV}
+            icon={<Download className="w-3.5 h-3.5" />}
+          >
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       {/* Filter Bar */}

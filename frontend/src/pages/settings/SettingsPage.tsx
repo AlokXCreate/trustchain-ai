@@ -18,12 +18,23 @@ import { UserRole } from '../../types';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { useNotification } from '../../context/NotificationContext';
+import { aiProviderService, AIModelProvider } from '../../services/aiProviderService';
 
 export const SettingsPage: React.FC = () => {
   const { user, role, switchDemoRole } = useAuth();
   const { theme, setTheme } = useTheme();
+  const notify = useNotification();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'organization' | 'security' | 'notifications' | 'demo'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'organization' | 'security' | 'notifications' | 'ai-keys' | 'demo'>('profile');
+
+  // AI Keys state
+  const initialAiCfg = aiProviderService.getStoredConfig();
+  const [aiProvider, setAiProvider] = useState<AIModelProvider>(initialAiCfg.provider);
+  const [geminiKey, setGeminiKey] = useState(initialAiCfg.geminiKey || '');
+  const [openaiKey, setOpenaiKey] = useState(initialAiCfg.openaiKey || '');
+  const [aiTesting, setAiTesting] = useState(false);
+  const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Profile Form State
   const [fullName, setFullName] = useState(user?.full_name || 'Alex Mercer');
@@ -114,7 +125,17 @@ export const SettingsPage: React.FC = () => {
               : 'text-slate-500 hover:text-brand-text dark:hover:text-white'
           }`}
         >
-          Notifications & Theme
+          Notifications & Sound
+        </button>
+        <button
+          onClick={() => setActiveTab('ai-keys')}
+          className={`pb-3 whitespace-nowrap transition-colors ${
+            activeTab === 'ai-keys'
+              ? 'border-b-2 border-brand-accent text-brand-accent font-bold'
+              : 'text-slate-500 hover:text-brand-text dark:hover:text-white'
+          }`}
+        >
+          AI Model & API Keys
         </button>
         <button
           onClick={() => setActiveTab('demo')}
@@ -326,6 +347,159 @@ export const SettingsPage: React.FC = () => {
               />
               <span>High anomaly and forgery risk instant alerts</span>
             </label>
+            <label className="flex items-center gap-2.5 cursor-pointer pt-2 border-t border-slate-100 dark:border-navy-800">
+              <input
+                type="checkbox"
+                checked={notify.isSoundEnabled}
+                onChange={() => notify.toggleSound()}
+                className="rounded border-slate-300 text-brand-accent focus:ring-brand-accent"
+              />
+              <span className="font-semibold text-brand-text dark:text-white">Enable UI Sound Effects (Audio feedback on action completion)</span>
+            </label>
+          </div>
+        </Card>
+      )}
+
+      {/* TAB: AI Model & API Keys */}
+      {activeTab === 'ai-keys' && (
+        <Card className="max-w-2xl p-6 space-y-5 text-xs">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-navy-800 pb-3">
+            <div>
+              <h2 className="text-sm font-bold text-brand-text dark:text-white">
+                AI Inference Models & API Keys
+              </h2>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Connect external LLM APIs (Google Gemini, OpenAI) or use TrustChain's offline forensic engine.
+              </p>
+            </div>
+            <Badge variant="info">{aiProviderService.getActiveProviderName()}</Badge>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setAiProvider('gemini');
+                setAiTestResult(null);
+              }}
+              className={`p-3 rounded-xl border text-left transition-all ${
+                aiProvider === 'gemini'
+                  ? 'border-brand-accent bg-brand-accent/10 text-brand-accent font-bold ring-1 ring-brand-accent'
+                  : 'border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 text-slate-700 dark:text-slate-300'
+              }`}
+            >
+              <span className="font-bold block">Google Gemini</span>
+              <span className="text-[10px] text-slate-500">1.5 Flash API</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAiProvider('openai');
+                setAiTestResult(null);
+              }}
+              className={`p-3 rounded-xl border text-left transition-all ${
+                aiProvider === 'openai'
+                  ? 'border-brand-accent bg-brand-accent/10 text-brand-accent font-bold ring-1 ring-brand-accent'
+                  : 'border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 text-slate-700 dark:text-slate-300'
+              }`}
+            >
+              <span className="font-bold block">OpenAI</span>
+              <span className="text-[10px] text-slate-500">GPT-4o / mini</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAiProvider('offline');
+                setAiTestResult(null);
+              }}
+              className={`p-3 rounded-xl border text-left transition-all ${
+                aiProvider === 'offline'
+                  ? 'border-brand-accent bg-brand-accent/10 text-brand-accent font-bold ring-1 ring-brand-accent'
+                  : 'border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 text-slate-700 dark:text-slate-300'
+              }`}
+            >
+              <span className="font-bold block">Built-In Offline</span>
+              <span className="text-[10px] text-emerald-600 font-semibold">Zero Config</span>
+            </button>
+          </div>
+
+          {aiProvider === 'gemini' && (
+            <div className="space-y-1.5">
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block">
+                Google Gemini API Key
+              </label>
+              <input
+                type="password"
+                placeholder="AIzaSy..."
+                value={geminiKey}
+                onChange={(e) => setGeminiKey(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-navy-900 border border-slate-200 dark:border-navy-700 rounded-xl px-3 py-2 text-brand-text dark:text-white font-mono"
+              />
+              <p className="text-[10px] text-slate-400">
+                Obtain a key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-brand-accent underline">Google AI Studio</a>. Keys are stored safely in local browser storage.
+              </p>
+            </div>
+          )}
+
+          {aiProvider === 'openai' && (
+            <div className="space-y-1.5">
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block">
+                OpenAI API Key
+              </label>
+              <input
+                type="password"
+                placeholder="sk-proj-..."
+                value={openaiKey}
+                onChange={(e) => setOpenaiKey(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-navy-900 border border-slate-200 dark:border-navy-700 rounded-xl px-3 py-2 text-brand-text dark:text-white font-mono"
+              />
+            </div>
+          )}
+
+          {aiTestResult && (
+            <div className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
+              aiTestResult.success ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 text-emerald-700' : 'bg-rose-50 dark:bg-rose-950/40 border-rose-300 text-rose-700'
+            }`}>
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{aiTestResult.message}</span>
+            </div>
+          )}
+
+          <div className="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-navy-800">
+            {aiProvider !== 'offline' ? (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={aiTesting}
+                onClick={async () => {
+                  setAiTesting(true);
+                  const key = aiProvider === 'gemini' ? geminiKey : openaiKey;
+                  const res = await aiProviderService.testConnection(aiProvider, key);
+                  setAiTestResult(res);
+                  setAiTesting(false);
+                  if (res.success) notify.success('Connection Successful', res.message);
+                  else notify.error('Connection Failed', res.message);
+                }}
+              >
+                {aiTesting ? 'Verifying...' : 'Test Connection'}
+              </Button>
+            ) : <div />}
+
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<Save className="w-3.5 h-3.5" />}
+              onClick={() => {
+                aiProviderService.saveConfig({
+                  provider: aiProvider,
+                  geminiKey,
+                  openaiKey,
+                });
+                notify.success('AI Preferences Saved', `Active model: ${aiProviderService.getActiveProviderName()}`);
+              }}
+            >
+              Save AI Configuration
+            </Button>
           </div>
         </Card>
       )}

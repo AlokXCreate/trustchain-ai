@@ -13,14 +13,17 @@ import {
   CheckCircle2,
   AlertCircle,
   Sparkles,
+  Zap,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types';
 import { Button } from '../../components/ui/Button';
+import { useNotification } from '../../context/NotificationContext';
 
 export const LoginPage: React.FC = () => {
-  const { login, switchDemoRole } = useAuth();
+  const { login, switchDemoRole, loginAsGuest } = useAuth();
   const navigate = useNavigate();
+  const notify = useNotification();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,9 +36,11 @@ export const LoginPage: React.FC = () => {
     setIsLoading(true);
     try {
       await login(email, password);
+      notify.success('Authentication Successful', `Welcome to TrustChain AI, ${email}`);
       navigate('/app/dashboard');
     } catch (err: any) {
       setError(err.message || 'Invalid email or password');
+      notify.error('Login Failed', err.message || 'Please check your credentials.');
     } finally {
       setIsLoading(false);
     }
@@ -45,10 +50,23 @@ export const LoginPage: React.FC = () => {
     setIsLoading(true);
     try {
       await switchDemoRole(role);
+      const roleNames: Record<UserRole, string> = {
+        individual: 'Alex Mercer (Student / Individual)',
+        institution: 'Dr. Eleanor Vance (MIT Registrar)',
+        verifier: 'Marcus Chen (Corporate HR Verifier)',
+        admin: 'Sarah Connor (Platform Admin)',
+      };
+      notify.success('Persona Switched', `Logged in as ${roleNames[role]}`);
       navigate('/app/dashboard');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGuestAccess = () => {
+    loginAsGuest();
+    notify.info('Guest Mode Active', 'Exploring TrustChain AI platform as a guest.');
+    navigate('/app/dashboard');
   };
 
   return (
@@ -180,6 +198,15 @@ export const LoginPage: React.FC = () => {
                 <p className="text-[9px] text-brand-muted">Platform Admin</p>
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={handleGuestAccess}
+              className="w-full py-2 px-3 mt-2 rounded-xl border border-dashed border-slate-300 dark:border-navy-600 hover:border-brand-accent hover:bg-slate-50 dark:hover:bg-navy-900 text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-500" />
+              <span>Instant Guest Explorer (No Credentials Required)</span>
+            </button>
           </div>
         </div>
 
@@ -197,6 +224,7 @@ export const LoginPage: React.FC = () => {
 export const RegisterPage: React.FC = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const notify = useNotification();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -222,9 +250,11 @@ export const RegisterPage: React.FC = () => {
         designation: designation || undefined,
         country,
       });
+      notify.success('Account Created', `Welcome to TrustChain AI, ${fullName || email}!`);
       navigate('/app/dashboard');
     } catch (err: any) {
       setError(err.message || 'Registration failed');
+      notify.error('Registration Failed', err.message || 'Please verify form fields.');
     } finally {
       setIsLoading(false);
     }

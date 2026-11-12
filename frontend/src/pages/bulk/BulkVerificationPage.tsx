@@ -16,8 +16,11 @@ import { api } from '../../services/api';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { useNotification } from '../../context/NotificationContext';
+import { ReportDownloadDropdown } from '../../components/reports/ReportDownloadDropdown';
 
 export const BulkVerificationPage: React.FC = () => {
+  const notify = useNotification();
   const [batches, setBatches] = useState<BatchItem[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState<string>('batch_apex_01');
   const [isUploading, setIsUploading] = useState(false);
@@ -72,7 +75,8 @@ export const BulkVerificationPage: React.FC = () => {
     e.preventDefault();
     setIsUploading(true);
     try {
-      // Mock upload 10 candidate files
+      await new Promise((r) => setTimeout(r, 700));
+      // Mock upload 15 candidate files
       const newBatch: BatchItem = {
         id: `batch_${Date.now().toString().slice(-6)}`,
         batch_name: batchName || 'Enterprise Candidate Batch',
@@ -89,6 +93,7 @@ export const BulkVerificationPage: React.FC = () => {
       setBatches([newBatch, ...batches]);
       setSelectedBatchId(newBatch.id);
       setBatchName('');
+      notify.success('Batch Verification Complete', `Batch '${newBatch.batch_name}' processed: 14 verified, 1 flagged.`);
     } finally {
       setIsUploading(false);
     }
@@ -118,6 +123,17 @@ export const BulkVerificationPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <ReportDownloadDropdown
+            reportId={`TC-BATCH-${selectedBatch?.id || 'APEX-01'}`}
+            documentName={`${selectedBatch?.batch_name || 'Batch_Verification'}.pdf`}
+            category="Bulk Verification Audit"
+            riskScore={8}
+            status="verified"
+            buttonLabel="Download Batch Dossier"
+            variant="primary"
+            size="sm"
+          />
+
           <Button
             variant="outline"
             size="sm"
@@ -130,10 +146,11 @@ export const BulkVerificationPage: React.FC = () => {
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);
+              notify.download('CSV Exported', 'Candidate verification CSV downloaded.');
             }}
             icon={<Download className="w-3.5 h-3.5" />}
           >
-            Download Batch CSV
+            Download CSV
           </Button>
         </div>
       </div>

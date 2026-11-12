@@ -18,9 +18,12 @@ import { api } from '../../services/api';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { useNotification } from '../../context/NotificationContext';
+import { ReportDownloadDropdown } from '../../components/reports/ReportDownloadDropdown';
 
 export const VerificationHistoryPage: React.FC = () => {
   const navigate = useNavigate();
+  const notify = useNotification();
 
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [search, setSearch] = useState('');
@@ -30,16 +33,31 @@ export const VerificationHistoryPage: React.FC = () => {
 
   const fetchDocuments = async () => {
     setIsLoading(true);
+    let allDocs: DocumentItem[] = [];
+
+    // Check localStorage local docs
+    try {
+      const local = localStorage.getItem('tc_local_docs');
+      if (local) {
+        allDocs = JSON.parse(local);
+      }
+    } catch {}
+
     try {
       const data = await api.get<DocumentItem[]>('/documents/list', {
         search: search || undefined,
         category: selectedCategory !== 'all' ? selectedCategory : undefined,
         status: selectedStatus !== 'all' ? selectedStatus : undefined,
       });
-      setDocuments(data);
+      if (data && data.length > 0) {
+        const ids = new Set(allDocs.map((d) => d.id));
+        data.forEach((d) => {
+          if (!ids.has(d.id)) allDocs.push(d);
+        });
+      }
     } catch {
       // Fallback demo data
-      setDocuments([
+      const defaultDocs: DocumentItem[] = [
         {
           id: 'doc_demo_degree_01',
           name: 'Stanford_University_BS_Computer_Science.pdf',
@@ -88,10 +106,28 @@ export const VerificationHistoryPage: React.FC = () => {
           status: 'review_required',
           created_at: '2026-10-31T18:00:00Z',
         },
-      ]);
-    } finally {
-      setIsLoading(false);
+      ];
+      const ids = new Set(allDocs.map((d) => d.id));
+      defaultDocs.forEach((d) => {
+        if (!ids.has(d.id)) allDocs.push(d);
+      });
     }
+
+    // Apply client filters if running offline
+    let filtered = allDocs;
+    if (search) {
+      const q = search.toLowerCase();
+      filtered = filtered.filter((d) => d.name.toLowerCase().includes(q) || (d.certificate_number && d.certificate_number.toLowerCase().includes(q)));
+    }
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter((d) => d.category === selectedCategory);
+    }
+    if (selectedStatus !== 'all') {
+      filtered = filtered.filter((d) => d.status === selectedStatus);
+    }
+
+    setDocuments(filtered);
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -101,16 +137,16 @@ export const VerificationHistoryPage: React.FC = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     fetchDocuments();
+    notify.info('Search Applied', `Filtered documents list.`);
   };
 
   const handleDelete = async (docId: string) => {
     if (!window.confirm('Are you sure you want to delete this document record?')) return;
     try {
       await api.delete(`/documents/${docId}`);
-      setDocuments((prev) => prev.filter((d) => d.id !== docId));
-    } catch (err: any) {
-      alert(err.message || 'Deletion failed');
-    }
+    } catch {}
+    setDocuments((prev) => prev.filter((d) => d.id !== docId));
+    notify.success('Document Removed', `Dossier record ${docId} deleted.`);
   };
 
   const exportCSV = () => {
@@ -134,6 +170,7 @@ export const VerificationHistoryPage: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    notify.download('CSV Exported', 'Full verification audit trail downloaded.');
   };
 
   const getStatusBadge = (status: VerificationStatus) => {
@@ -281,20 +318,32 @@ export const VerificationHistoryPage: React.FC = () => {
                         {doc.status === 'verified' ? 'Sepolia Ready' : 'Unanchored'}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-right space-x-2">
-                      <button
-                        onClick={() => navigate(`/app/verify/${doc.id}`)}
-                        className="text-xs font-semibold text-brand-accent hover:underline inline-flex items-center gap-1"
-                      >
-                        Dossier <ArrowRight className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(doc.id)}
-                        className="text-xs text-rose-500 hover:text-rose-700 p-1"
-                        title="Delete Document"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 inline" />
-                      </button>
+                    <td className="py-3.5 px-4 text-right">
+                      <div className="flex items-center justify-end space-x-2">
+                        <ReportDownloadDropdown
+                          reportId={`TC-REPORT-2026-${doc.id.replace('doc_', '')}`}
+                          documentName={doc.name}
+                          category={doc.category}
+                          riskScore={doc.status === 'verified' ? 12 : 78}
+                          status={doc.status}
+                          buttonLabel="Export"
+                          variant="outline"
+                          size="sm"
+                        />
+                        <button
+                          onClick={() => navigate(`/app/verify/${doc.id}`)}
+                          className="text-xs font-semibold text-brand-accent hover:underline inline-flex items-center gap-1"
+                        >
+                          Dossier <ArrowRight className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(doc.id)}
+                          className="text-xs text-rose-500 hover:text-rose-700 p-1"
+                          title="Delete Document"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 inline" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

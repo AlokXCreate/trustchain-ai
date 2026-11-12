@@ -33,9 +33,14 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
+import { useNotification } from '../../context/NotificationContext';
+import { aiProviderService } from '../../services/aiProviderService';
+import { ApiKeyModal } from '../../components/settings/ApiKeyModal';
+import { ReportDownloadDropdown } from '../../components/reports/ReportDownloadDropdown';
 
 export const AIAssistantPage: React.FC = () => {
   const { user, role } = useAuth();
+  const notify = useNotification();
   const [searchParams] = useSearchParams();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -43,6 +48,8 @@ export const AIAssistantPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string>('conv_rag_01');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [activeModelLabel, setActiveModelLabel] = useState(() => aiProviderService.getActiveProviderName());
 
   // Active document context (supports ?docId=... from URL)
   const [userDocuments, setUserDocuments] = useState<DocumentItem[]>([]);
@@ -257,51 +264,31 @@ export const AIAssistantPage: React.FC = () => {
 
     try {
       const historyPayload = messages.slice(-4).map((m) => ({
-        sender: m.sender,
+        role: (m.sender === 'assistant' ? 'assistant' : 'user') as 'assistant' | 'user',
         content: m.content,
       }));
 
-      const reply = await api.post<RAGChatResponse>('/rag/chat', {
-        query: text,
-        document_id: selectedDocId || undefined,
-        conversation_history: historyPayload,
-        top_k: 4,
-      });
+      const docObj = userDocuments.find((d) => d.id === selectedDocId);
+      const docContext = docObj
+        ? `Document: ${docObj.name}, Category: ${docObj.category}, Status: ${docObj.status}, Issuer: ${docObj.issuer_name || 'Stanford'}`
+        : undefined;
+
+      const reply = await aiProviderService.chat(text, historyPayload, docContext);
 
       const assistantMsg: ChatMessage = {
         id: `msg_rep_${Date.now()}`,
         conversation_id: conversationId,
         sender: 'assistant',
         content: reply.answer,
-        sources: reply.citations?.map((c) => `${c.source_title} (${c.institution})`) || [],
-        citations: reply.citations,
-        evidence_sufficiency: reply.evidence_sufficiency,
+        sources: reply.citations,
+        evidence_sufficiency: 'high',
         timestamp: new Date().toISOString(),
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
-    } catch {
-      // Fallback synthesis if backend unreachable
-      setTimeout(() => {
-        const fallbackMsg: ChatMessage = {
-          id: `msg_fallback_${Date.now()}`,
-          conversation_id: conversationId,
-          sender: 'assistant',
-          content:
-            '### Grounded Verification Analysis\n\n' +
-            'TrustChain AI evaluates documents using **multi-modal evidence fusion**:\n\n' +
-            '1. **OCR & Semantic Validation**: Checks typography, student conferral titles, and mathematical consistency.\n' +
-            '2. **Error Level Analysis (ELA)**: Localizes digital JPEG compression discrepancies and spliced regions.\n' +
-            '3. **Decentralized Verification**: Cross-references SHA-256 byte hashes with the `TrustChainCredentialRegistry` smart contract.\n\n' +
-            '*Note: When verifying files, even a single modified pixel or re-saving changes the cryptographic SHA-256 digest.*',
-          sources: ['TrustChain Knowledge Base', 'Ethereum Sepolia Registry'],
-          evidence_sufficiency: 'moderate',
-          timestamp: new Date().toISOString(),
-        };
-        setMessages((prev) => [...prev, fallbackMsg]);
-        setIsLoading(false);
-      }, 500);
-      return;
+      notify.success('AI Response Generated', `Analyzed via ${reply.modelName}`);
+    } catch (err: any) {
+      notify.error('Generation Error', err.message || 'Could not complete assistant inference.');
     } finally {
       setIsLoading(false);
     }
@@ -310,6 +297,7 @@ export const AIAssistantPage: React.FC = () => {
   const copyResponse = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
+    notify.success('Copied', 'Assistant response copied to clipboard.');
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -379,12 +367,35 @@ export const AIAssistantPage: React.FC = () => {
             </Button>
           )}
 
+          {/* AI Model & Key Config */}
+          <button
+            type="button"
+            onClick={() => setIsApiKeyModalOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 text-xs font-semibold hover:bg-indigo-100/60 transition-colors shrink-0"
+            title="Configure Gemini, OpenAI, or Offline AI Engine"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+            <span className="truncate max-w-[120px]">{activeModelLabel}</span>
+          </button>
+
+          {/* Export Chat Report */}
+          <ReportDownloadDropdown
+            reportId={`TC-CONSULT-${Date.now().toString().slice(-6)}`}
+            documentName={userDocuments.find((d) => d.id === selectedDocId)?.name || 'AI_Forensic_Investigation.pdf'}
+            category="AI Forensic Consultation"
+            riskScore={14}
+            status="verified"
+            buttonLabel="Export Audit"
+            variant="outline"
+            size="sm"
+          />
+
           <Button
             variant="ghost"
             size="sm"
             onClick={handleClearChat}
             icon={<Trash2 className="w-3.5 h-3.5 text-slate-400" />}
-            className="text-xs text-slate-500 hover:text-red-500"
+            className="text-xs text-slate-500 hover:text-red-500 shrink-0"
           >
             Clear
           </Button>
@@ -821,6 +832,13 @@ export const AIAssistantPage: React.FC = () => {
           </div>
         </Modal>
       )}
+
+      {/* Model & API Key Config Modal */}
+      <ApiKeyModal
+        isOpen={isApiKeyModalOpen}
+        onClose={() => setIsApiKeyModalOpen(false)}
+        onSaved={() => setActiveModelLabel(aiProviderService.getActiveProviderName())}
+      />
     </div>
   );
 };

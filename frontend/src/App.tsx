@@ -2,6 +2,8 @@ import React, { Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { NotificationProvider } from './context/NotificationContext';
+import { ToastContainer } from './components/notifications/ToastContainer';
 import { AppLayout } from './components/layout/AppLayout';
 
 // Route Code-Splitting (Optimized Bundle Size)
@@ -37,47 +39,50 @@ const RouteLoadingFallback: React.FC = () => (
 export const App: React.FC = () => {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <IntroAnimation onComplete={() => {}} />
-        <HashRouter>
-          <Suspense fallback={<RouteLoadingFallback />}>
-            <Routes>
-              {/* Public Landing, Authentication & Public Verifier */}
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/verify/public" element={<PublicVerificationPage />} />
-              <Route path="/verify/credential/:credentialId" element={<PublicVerificationPage />} />
-              <Route path="/verify/report/:reportId" element={<PublicReportVerifyPage />} />
-              <Route path="/verify-credential" element={<PublicVerificationPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <NotificationProvider>
+        <AuthProvider>
+          <ToastContainer />
+          <IntroAnimation onComplete={() => {}} />
+          <HashRouter>
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <Routes>
+                {/* Public Landing, Authentication & Public Verifier */}
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/verify/public" element={<PublicVerificationPage />} />
+                <Route path="/verify/credential/:credentialId" element={<PublicVerificationPage />} />
+                <Route path="/verify/report/:reportId" element={<PublicReportVerifyPage />} />
+                <Route path="/verify-credential" element={<PublicVerificationPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-              {/* Authenticated Application Shell */}
-              <Route path="/app" element={<AppLayout />}>
-                <Route index element={<Navigate to="/app/dashboard" replace />} />
-                <Route path="dashboard" element={<DashboardPage />} />
-                <Route path="upload" element={<DocumentUploadPage />} />
-                <Route path="verify" element={<VerificationWorkspacePage />} />
-                <Route path="verify/:docId" element={<VerificationWorkspacePage />} />
-                <Route path="history" element={<VerificationHistoryPage />} />
-                <Route path="reports" element={<ReportCenterPage />} />
-                <Route path="reports/:reportId" element={<ReportDetailPage />} />
-                <Route path="emails" element={<EmailHistoryPage />} />
-                <Route path="credentials" element={<DigitalCredentialsPage />} />
-                <Route path="issuers" element={<IssuerRegistryPage />} />
-                <Route path="bulk" element={<BulkVerificationPage />} />
-                <Route path="assistant" element={<AIAssistantPage />} />
-                <Route path="analytics" element={<AnalyticsPage />} />
-                <Route path="audit" element={<AuditTrailPage />} />
-                <Route path="settings" element={<SettingsPage />} />
-              </Route>
+                {/* Authenticated Application Shell */}
+                <Route path="/app" element={<AppLayout />}>
+                  <Route index element={<Navigate to="/app/dashboard" replace />} />
+                  <Route path="dashboard" element={<DashboardPage />} />
+                  <Route path="upload" element={<DocumentUploadPage />} />
+                  <Route path="verify" element={<VerificationWorkspacePage />} />
+                  <Route path="verify/:docId" element={<VerificationWorkspacePage />} />
+                  <Route path="history" element={<VerificationHistoryPage />} />
+                  <Route path="reports" element={<ReportCenterPage />} />
+                  <Route path="reports/:reportId" element={<ReportDetailPage />} />
+                  <Route path="emails" element={<EmailHistoryPage />} />
+                  <Route path="credentials" element={<DigitalCredentialsPage />} />
+                  <Route path="issuers" element={<IssuerRegistryPage />} />
+                  <Route path="bulk" element={<BulkVerificationPage />} />
+                  <Route path="assistant" element={<AIAssistantPage />} />
+                  <Route path="analytics" element={<AnalyticsPage />} />
+                  <Route path="audit" element={<AuditTrailPage />} />
+                  <Route path="settings" element={<SettingsPage />} />
+                </Route>
 
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Suspense>
-        </HashRouter>
-      </AuthProvider>
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Suspense>
+          </HashRouter>
+        </AuthProvider>
+      </NotificationProvider>
     </ThemeProvider>
   );
 };

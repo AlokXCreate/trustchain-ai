@@ -28,9 +28,12 @@ import { useTheme } from '../../context/ThemeContext';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { useNotification } from '../../context/NotificationContext';
+import { ReportDownloadDropdown } from '../../components/reports/ReportDownloadDropdown';
 
 export const AnalyticsPage: React.FC = () => {
   const { theme } = useTheme();
+  const notify = useNotification();
   const isDark = theme === 'dark';
 
   const [dateRange, setDateRange] = useState('30d');
@@ -93,14 +96,16 @@ export const AnalyticsPage: React.FC = () => {
             <option value="1y">Last 12 Months</option>
           </select>
 
-          <Button
-            variant="outline"
+          <ReportDownloadDropdown
+            reportId={`TC-ANALYTICS-${dateRange.toUpperCase()}`}
+            documentName="TrustChain_Enterprise_Analytics_Report.pdf"
+            category="Analytics Audit"
+            riskScore={12}
+            status="verified"
+            buttonLabel="Export Analytics (PDF/Word/JSON/HTML)"
+            variant="primary"
             size="sm"
-            onClick={() => window.print()}
-            icon={<Download className="w-3.5 h-3.5" />}
-          >
-            Export Analytics Report
-          </Button>
+          />
         </div>
       </div>
 

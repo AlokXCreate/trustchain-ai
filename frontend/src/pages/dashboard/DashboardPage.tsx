@@ -39,10 +39,13 @@ import { api } from '../../services/api';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { useNotification } from '../../context/NotificationContext';
+import { ReportDownloadDropdown } from '../../components/reports/ReportDownloadDropdown';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const notify = useNotification();
   const navigate = useNavigate();
 
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
@@ -200,11 +203,24 @@ export const DashboardPage: React.FC = () => {
             Your document verification workspace. Real-time integrity metrics and ledger audits.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <ReportDownloadDropdown
+            reportId={`TC-DASHBOARD-${new Date().toISOString().split('T')[0]}`}
+            documentName="Executive_Dashboard_Audit_Report.pdf"
+            category="System Overview"
+            riskScore={10}
+            status="verified"
+            buttonLabel="Executive Report"
+            variant="outline"
+            size="sm"
+          />
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchMetrics}
+            onClick={() => {
+              fetchMetrics();
+              notify.info('Dashboard Refreshed', 'Telemetry and verification charts updated.');
+            }}
             icon={<RefreshCw className="w-3.5 h-3.5" />}
           >
             Refresh
